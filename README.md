@@ -1,6 +1,6 @@
 <!-- Profile Header -->
 <p align="center">
-  <img src="./profile.jpg" width="100" />
+  <img src="./profile.jpg" width="1000" />
 </p>
  
 <h1 align="center">Hi, I’m Jumana 👋</h1>
