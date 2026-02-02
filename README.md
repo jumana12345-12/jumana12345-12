@@ -1,16 +1,21 @@
-## Hi there 👋
+# Hi, I’m Jumana 👋
 
-<!--
-**jumana12345-12/jumana12345-12** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+🎓 I’m an HCI (Human-Computer Interaction) student based in Makkah.  
+💡 I’m passionate about designing and building meaningful digital experiences.
 
-Here are some ideas to get you started:
+## About me
+- 📍 From: Makkah, Saudi Arabia
+- 🎓 Major: Human-Computer Interaction (HCI)
+- 🌱 Interests: Web Development & Mobile Applications
+- ✨ Focus: User-centered design, usability, and real-world digital solutions
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+## What I’m working on
+- ✅ Learning Git & GitHub
+- 🛠️ Building practice projects for Web & Mobile
+- 📌 Developing my portfolio step by step
+
+## Connect with me
+- 💼 LinkedIn:  
+  https://www.linkedin.com/in/jumana-alsharif-2432a1260
+- 💻 GitHub:  
+  https://github.com/jumana12345-12
