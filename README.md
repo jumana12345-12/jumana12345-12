@@ -1,8 +1,8 @@
 <!-- Profile Header -->
 <p align="center">
-  <img src="./profile.jpg" width="170" style="border-radius: 50%;" />
+  <img src="./profile.jpg" width="100" />
 </p>
-
+ 
 <h1 align="center">Hi, I’m Jumana 👋</h1>
 
 <p align="center">
