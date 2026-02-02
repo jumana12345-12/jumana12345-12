@@ -38,15 +38,10 @@
 
 ---
 
-## GitHub Stats
-<p align="center">
-  <img src="https://github-readme-stats.vercel.app/api?username=jumana12345-12&show_icons=true&rank_icon=github" />
-</p>
 
 <p align="center">
-  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=jumana12345-12&layout=compact" />
+  <img src="https://media.giphy.com/media/czevJlexlxAyc/giphy.gif" width="100%" />
 </p>
-
 ---
 
 ## A little vibe ✨
