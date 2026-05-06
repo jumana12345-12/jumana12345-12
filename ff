@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>صحتنا — شريحة جرافيك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-primary: #4FB394;
+    --green-deep: #2E8B6A;
+    --green-mid: #3FA082;
+    --green-soft: #87C9A3;
+    --green-mint: #9EDDC4;
+    --green-pale: #C8E8D8;
+    --green-mist: #DDF3E9;
+    --green-cream: #F0FAF6;
+ 
+    --pink-soft: #FFC4D1;
+    --pink-warm: #FFB1BE;
+    --pink-deep: #E8889A;
+    --peach-soft: #FFD9C4;
+ 
+    --ink-deep: #1A3D2F;
+    --ink-mid: #4A6A5C;
+    --ink-soft: #7A9384;
+  }
+ 
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+ 
+  html, body {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+  }
+ 
+  body {
+    font-family: 'IBM Plex Sans Arabic', 'Tajawal', sans-serif;
+    background: radial-gradient(circle at 30% 20%, #D4E8DC, #B5D4C2 100%);
+    display: grid;
+    place-items: center;
+    -webkit-font-smoothing: antialiased;
+    color: var(--ink-deep);
+    min-height: 100vh;
+    padding: 20px;
+  }
+ 
+  /* ===== Stage: scales for viewing, exact 1600×900 for export ===== */
+  .stage {
+    position: relative;
+    width: 1600px;
+    height: 900px;
+    transform-origin: top center;
+    transform: scale(min(calc((100vw - 40px) / 1600), calc((100vh - 80px) / 900)));
+    flex-shrink: 0;
+    margin-bottom: 20px;
+  }
+ 
+  /* Export mode: removes scaling, removes border/shadow, exact pixel dimensions */
+  body.export-mode {
+    background: white;
+    padding: 0;
+    margin: 0;
+    display: block;
+    overflow: hidden;
+  }
+  body.export-mode .stage {
+    transform: none !important;
+    margin: 0 !important;
+  }
+  body.export-mode .slide {
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  body.export-mode .export-btn,
+  body.export-mode .page-indicator {
+    display: none !important;
+  }
+ 
+  .slide {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #DDF3E9 0%, #F0FAF6 30%, #FFF5F7 65%, #F0FAF6 100%);
+    border-radius: 32px;
+    overflow: hidden;
+    box-shadow: 
+      0 70px 140px -45px rgba(26, 61, 47, 0.4),
+      0 35px 70px -35px rgba(79, 179, 148, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+  }
+ 
+  .ambient {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .a1 { width: 460px; height: 460px; background: var(--green-soft); top: -160px; right: -100px; opacity: 0.5; }
+  .a2 { width: 400px; height: 400px; background: var(--pink-soft); bottom: -150px; left: -80px; opacity: 0.42; }
+  .a3 { width: 340px; height: 340px; background: var(--green-mint); top: 50%; left: 35%; opacity: 0.32; }
+  .a4 { width: 300px; height: 300px; background: var(--green-pale); top: 20%; left: 55%; opacity: 0.4; }
+ 
+  .slide::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    opacity: 0.025;
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: multiply;
+  }
+ 
+  .slide-inner {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    padding: 36px 50px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+ 
+  /* ===== TOP BAR ===== */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(22px) saturate(180%);
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 100px;
+    padding: 14px 26px;
+    box-shadow: 0 12px 36px -14px rgba(46, 100, 80, 0.15);
+    flex-shrink: 0;
+  }
+  .brand-row { display: flex; align-items: center; gap: 14px; }
+  .logo-mark {
+    width: 46px; height: 46px;
+    background: linear-gradient(135deg, #87C9A3, #2E8B6A);
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 8px 20px -6px rgba(79, 179, 148, 0.5);
+  }
+  .logo-mark::before {
+    content: '';
+    width: 22px; height: 22px;
+    background: white;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M12 21s-7.5-4.5-9.5-9C1 8 3 4 7 4c2 0 3.5 1 5 2.5C13.5 5 15 4 17 4c4 0 6 4 4.5 8-2 4.5-9.5 9-9.5 9z'/%3E%3C/svg%3E") center/contain no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M12 21s-7.5-4.5-9.5-9C1 8 3 4 7 4c2 0 3.5 1 5 2.5C13.5 5 15 4 17 4c4 0 6 4 4.5 8-2 4.5-9.5 9-9.5 9z'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
+  .brand-name {
+    font-family: 'Reem Kufi', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #2E8B6A, #4FB394);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+  .top-tag {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--green-deep);
+    letter-spacing: 4px;
+  }
+  .top-tag .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green-primary);
+  }
+  .top-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: var(--ink-mid);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .top-meta .pill {
+    padding: 6px 14px;
+    border-radius: 100px;
+    background: rgba(79, 179, 148, 0.12);
+    color: var(--green-deep);
+    font-weight: 600;
+  }
+ 
+  /* ===== HERO ROW ===== */
+  .hero-row {
+    display: grid;
+    grid-template-columns: 1.1fr auto 1fr;
+    gap: 36px;
+    align-items: center;
+    padding: 0 8px;
+    flex-shrink: 0;
+  }
+  .hero-left {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(79, 179, 148, 0.25);
+    border-radius: 100px;
+    padding: 8px 18px;
+    width: fit-content;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--green-deep);
+  }
+  .eyebrow::before {
+    content: '❤';
+    color: var(--pink-deep);
+    font-size: 12px;
+  }
+  .hero-title {
+    font-family: 'Reem Kufi', sans-serif;
+    font-size: 54px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ink-deep);
+    letter-spacing: -1px;
+  }
+  .hero-title .highlight {
+    background: linear-gradient(120deg, transparent 0%, transparent 30%, rgba(255, 196, 209, 0.7) 30%, rgba(255, 196, 209, 0.7) 100%);
+    padding: 0 6px;
+  }
+ 
+  .divider-vertical {
+    width: 1px;
+    height: 180px;
+    background: linear-gradient(180deg, transparent, rgba(79, 179, 148, 0.3), transparent);
+  }
+ 
+  .hero-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-right: 8px;
+  }
+  .hero-desc {
+    font-size: 17px;
+    color: var(--ink-mid);
+    line-height: 1.85;
+    max-width: 660px;
+  }
+  .hero-features {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .hero-feature {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--green-deep);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .hero-feature::before {
+    content: '✓';
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--green-mint);
+    color: var(--green-deep);
+    display: grid; place-items: center;
+    font-size: 13px; font-weight: 700;
+  }
+ 
+  /* ===== STORY CARDS ===== */
+  .stories {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+    flex-shrink: 0;
+  }
+  .story {
+    background: white;
+    border-radius: 24px;
+    padding: 22px;
+    box-shadow: 0 22px 50px -18px rgba(46, 100, 80, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .story::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    background: var(--gradient);
+    opacity: 0.45;
+    z-index: 0;
+  }
+  .story > * { position: relative; z-index: 1; }
+ 
+  .story-illust {
+    width: 100%;
+    height: 200px;
+    display: grid;
+    place-items: center;
+  }
+  .story-illust svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+ 
+  .story-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .story-tag {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 13px;
+    border-radius: 100px;
+    flex-shrink: 0;
+    letter-spacing: 0.3px;
+  }
+  .story-text {
+    font-family: 'Tajawal', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink-deep);
+    line-height: 1.45;
+    flex: 1;
+    min-width: 0;
+  }
+ 
+  .s-forget { --gradient: linear-gradient(160deg, #FFE5EC, #FFF7F8); }
+  .s-forget .story-tag { background: rgba(232, 136, 154, 0.18); color: #C2466A; }
+ 
+  .s-rush { --gradient: linear-gradient(160deg, #DDF3E9, #F0FAF6); }
+  .s-rush .story-tag { background: rgba(79, 179, 148, 0.18); color: var(--green-deep); }
+ 
+  .s-watch { --gradient: linear-gradient(160deg, #E8F4DD, #F4FAEC); }
+  .s-watch .story-tag { background: rgba(158, 221, 196, 0.45); color: var(--green-deep); }
+ 
+  /* ===== BOTTOM ROW ===== */
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 22px;
+    align-items: stretch;
+    flex-shrink: 0;
+    margin-top: auto;
+  }
+ 
+  .services {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  .service {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 18px;
+    padding: 18px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 10px 28px -10px rgba(46, 100, 80, 0.18);
+  }
+  .service-icon {
+    width: 50px; height: 50px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+  .service-icon svg {
+    width: 26px; height: 26px;
+    color: white;
+  }
+  .s1 .service-icon { background: linear-gradient(135deg, #87C9A3, #4FB394); }
+  .s2 .service-icon { background: linear-gradient(135deg, #FFB1BE, #E8889A); }
+  .s3 .service-icon { background: linear-gradient(135deg, #9EDDC4, #4FB394); }
+  .s4 .service-icon { background: linear-gradient(135deg, #FFC4D1, #E8889A); }
+ 
+  .service-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+  .service-title {
+    font-family: 'Tajawal', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink-deep);
+    line-height: 1.2;
+  }
+  .service-sub {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    font-weight: 500;
+    line-height: 1.3;
+  }
+ 
+  .stats-panel {
+    background: linear-gradient(135deg, var(--green-deep), var(--green-primary));
+    border-radius: 20px;
+    padding: 22px 30px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    box-shadow: 0 22px 50px -18px rgba(46, 139, 106, 0.55);
+    position: relative;
+    overflow: hidden;
+    min-width: 380px;
+  }
+  .stats-panel::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 140px; height: 140px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.18), transparent 70%);
+    border-radius: 50%;
+  }
+  .stats-panel::after {
+    content: '';
+    position: absolute;
+    bottom: -30px; left: -30px;
+    width: 110px; height: 110px;
+    background: radial-gradient(circle, rgba(255, 196, 209, 0.25), transparent 70%);
+    border-radius: 50%;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    z-index: 1;
+  }
+  .stat-num {
+    font-family: 'Reem Kufi', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .stat-label {
+    font-family: 'Tajawal', sans-serif;
+    font-size: 12px;
+    opacity: 0.9;
+    font-weight: 500;
+  }
+  .stat-divider {
+    width: 1px;
+    height: 38px;
+    background: rgba(255, 255, 255, 0.3);
+    position: relative;
+    z-index: 1;
+  }
+ 
+  .page-indicator {
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Tajawal', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    letter-spacing: 6px;
+    opacity: 0.5;
+    z-index: 3;
+  }
+ 
+  /* ===== Export button ===== */
+  .export-btn {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--green-deep);
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 100px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 12px 30px -8px rgba(46, 139, 106, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .export-btn:hover {
+    background: var(--green-primary);
+  }
+ 
+  @media print {
+    body { background: white !important; padding: 0 !important; }
+    .stage { transform: none !important; }
+    .slide { box-shadow: none !important; border: none !important; border-radius: 0 !important; }
+    .export-btn, .page-indicator { display: none !important; }
+    @page { size: 1600px 900px; margin: 0; }
+  }
+</style>
+</head>
+<body>
+ 
+<div class="stage">
+  <div class="slide">
+    <div class="ambient a1"></div>
+    <div class="ambient a2"></div>
+    <div class="ambient a3"></div>
+    <div class="ambient a4"></div>
+ 
+    <div class="slide-inner">
+ 
+      <!-- ===== TOP BAR ===== -->
+      <header class="topbar">
+        <div class="brand-row">
+          <div class="logo-mark"></div>
+          <div class="brand-name">صحتنا</div>
+        </div>
+        <div class="top-tag">
+          <span>FAMILY</span>
+          <span class="dot"></span>
+          <span>CARE</span>
+          <span class="dot"></span>
+          <span>2026</span>
+        </div>
+        <div class="top-meta">
+          <span class="pill">تطبيق العائلة الصحي</span>
+        </div>
+      </header>
+ 
+      <!-- ===== HERO ===== -->
+      <section class="hero-row">
+        <div class="hero-left">
+          <div class="eyebrow">صُمم بحبّ لكل أفراد العائلة</div>
+          <h1 class="hero-title">
+            لأن من نحبهم…<br>
+            يستحقون <span class="highlight">أكثر من النسيان</span>
+          </h1>
+        </div>
+ 
+        <div class="divider-vertical"></div>
+ 
+        <div class="hero-right">
+          <p class="hero-desc">
+            رحلة صحية ذكية تساعد العائلة على متابعة المواعيد، الأدوية، والتقارير الطبية بسهولة وطمأنينة — لأن كل تفصيل في صحة من تحب يستحق الاهتمام.
+          </p>
+          <div class="hero-features">
+            <span class="hero-feature">تذكير ذكي</span>
+            <span class="hero-feature">واجهة بسيطة</span>
+            <span class="hero-feature">آمنة وموثوقة</span>
+          </div>
+        </div>
+      </section>
+ 
+      <!-- ===== STORY CARDS — clean iconic illustrations ===== -->
+      <section class="stories">
+ 
+        <!-- Story 1: Pill bottle + clock (forgetting medication) -->
+        <article class="story s-forget">
+          <div class="story-illust">
+            <svg viewBox="0 0 360 200" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="bottle1" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#FFB1BE"/>
+                  <stop offset="1" stop-color="#E8889A"/>
+                </linearGradient>
+                <linearGradient id="cap1" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#FFD0DA"/>
+                  <stop offset="1" stop-color="#FFB1BE"/>
+                </linearGradient>
+                <linearGradient id="clockFace1" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#FFFFFF"/>
+                  <stop offset="1" stop-color="#FFF0F4"/>
+                </linearGradient>
+                <filter id="softShadow1" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+                  <feOffset dx="0" dy="6" result="off"/>
+                  <feComponentTransfer><feFuncA type="linear" slope="0.18"/></feComponentTransfer>
+                  <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+              </defs>
+ 
+              <ellipse cx="180" cy="120" rx="140" ry="60" fill="white" opacity="0.6"/>
+ 
+              <g opacity="0.7">
+                <g transform="translate(70, 50) rotate(-20)">
+                  <rect x="-16" y="-7" width="32" height="14" rx="7" fill="#FFB1BE"/>
+                  <rect x="-16" y="-7" width="16" height="14" rx="7" fill="white"/>
+                </g>
+                <g transform="translate(300, 60) rotate(25)">
+                  <rect x="-14" y="-6" width="28" height="12" rx="6" fill="#FFD0DA"/>
+                  <rect x="-14" y="-6" width="14" height="12" rx="6" fill="white"/>
+                </g>
+                <circle cx="60" cy="150" r="7" fill="#FFD0DA"/>
+                <circle cx="60" cy="150" r="3" fill="#E8889A"/>
+                <circle cx="310" cy="150" r="6" fill="#FFB1BE"/>
+                <circle cx="310" cy="150" r="2.5" fill="#E8889A"/>
+              </g>
+ 
+              <!-- Pill bottle -->
+              <g transform="translate(125, 100)" filter="url(#softShadow1)">
+                <rect x="-38" y="-58" width="76" height="20" rx="5" fill="url(#cap1)"/>
+                <rect x="-38" y="-58" width="76" height="6" rx="3" fill="#E8889A" opacity="0.4"/>
+                <rect x="-44" y="-38" width="88" height="84" rx="10" fill="url(#bottle1)"/>
+                <rect x="-36" y="-20" width="72" height="50" rx="4" fill="white"/>
+                <g transform="translate(0, -5)">
+                  <rect x="-14" y="-6" width="28" height="12" rx="6" fill="#FFB1BE"/>
+                  <rect x="-14" y="-6" width="14" height="12" rx="6" fill="#FFD0DA"/>
+                  <line x1="0" y1="-6" x2="0" y2="6" stroke="white" stroke-width="1"/>
+                </g>
+                <rect x="-26" y="14" width="52" height="3" rx="1.5" fill="#FFD0DA"/>
+                <rect x="-26" y="20" width="36" height="3" rx="1.5" fill="#FFE5EC"/>
+                <rect x="-40" y="-34" width="6" height="60" rx="3" fill="white" opacity="0.4"/>
+              </g>
+ 
+              <!-- Clock with missed time -->
+              <g transform="translate(245, 95)" filter="url(#softShadow1)">
+                <circle r="50" fill="url(#clockFace1)" stroke="#E8889A" stroke-width="3"/>
+                <g stroke="#E8889A" stroke-width="2" stroke-linecap="round">
+                  <line x1="0" y1="-42" x2="0" y2="-36"/>
+                  <line x1="42" y1="0" x2="36" y2="0"/>
+                  <line x1="0" y1="42" x2="0" y2="36"/>
+                  <line x1="-42" y1="0" x2="-36" y2="0"/>
+                </g>
+                <line x1="0" y1="0" x2="-18" y2="14" stroke="#1A3D2F" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="0" y1="0" x2="0" y2="-28" stroke="#1A3D2F" stroke-width="2.5" stroke-linecap="round"/>
+                <circle r="4" fill="#1A3D2F"/>
+                <rect x="-22" y="20" width="44" height="16" rx="8" fill="#E8889A"/>
+                <text x="0" y="32" text-anchor="middle" font-family="Tajawal" font-size="12" font-weight="700" fill="white">8:00</text>
+              </g>
+ 
+              <!-- Alert badge -->
+              <g transform="translate(290, 60)">
+                <circle r="16" fill="#E8889A" stroke="white" stroke-width="3"/>
+                <text y="6" text-anchor="middle" font-family="Tajawal" font-size="20" font-weight="700" fill="white">!</text>
+              </g>
+            </svg>
+          </div>
+          <div class="story-meta">
+            <span class="story-tag">نسيان</span>
+            <span class="story-text">حين تمر الساعة دون أن تتذكر الجرعة</span>
+          </div>
+        </article>
+ 
+        <!-- Story 2: Calendar + appointment card -->
+        <article class="story s-rush">
+          <div class="story-illust">
+            <svg viewBox="0 0 360 200" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="calBody2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#FFFFFF"/>
+                  <stop offset="1" stop-color="#F0FAF6"/>
+                </linearGradient>
+                <linearGradient id="calHead2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#4FB394"/>
+                  <stop offset="1" stop-color="#2E8B6A"/>
+                </linearGradient>
+                <linearGradient id="card2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#FFFFFF"/>
+                  <stop offset="1" stop-color="#F0FAF6"/>
+                </linearGradient>
+                <filter id="softShadow2" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+                  <feOffset dx="0" dy="6" result="off"/>
+                  <feComponentTransfer><feFuncA type="linear" slope="0.18"/></feComponentTransfer>
+                  <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+              </defs>
+ 
+              <ellipse cx="180" cy="120" rx="140" ry="60" fill="white" opacity="0.5"/>
+ 
+              <circle cx="55" cy="55" r="5" fill="#9EDDC4" opacity="0.6"/>
+              <circle cx="320" cy="60" r="4" fill="#87C9A3" opacity="0.6"/>
+              <circle cx="60" cy="160" r="4" fill="#FFC4D1" opacity="0.7"/>
+ 
+              <!-- Calendar -->
+              <g transform="translate(115, 100)" filter="url(#softShadow2)">
+                <rect x="-50" y="-55" width="100" height="100" rx="10" fill="url(#calBody2)" stroke="#C8E8D8" stroke-width="2"/>
+                <rect x="-50" y="-55" width="100" height="28" rx="10" fill="url(#calHead2)"/>
+                <rect x="-50" y="-40" width="100" height="13" fill="url(#calHead2)"/>
+                <line x1="-30" y1="-65" x2="-30" y2="-50" stroke="#1A3D2F" stroke-width="4" stroke-linecap="round"/>
+                <line x1="30" y1="-65" x2="30" y2="-50" stroke="#1A3D2F" stroke-width="4" stroke-linecap="round"/>
+                <text x="0" y="-37" text-anchor="middle" font-family="Tajawal" font-size="10" font-weight="700" fill="white" letter-spacing="2">MAY</text>
+                <g transform="translate(0, -16)">
+                  <circle cx="-32" cy="0" r="2.5" fill="#C8E8D8"/>
+                  <circle cx="-16" cy="0" r="2.5" fill="#C8E8D8"/>
+                  <circle cx="0" cy="0" r="2.5" fill="#C8E8D8"/>
+                  <circle cx="16" cy="0" r="2.5" fill="#C8E8D8"/>
+                  <circle cx="32" cy="0" r="2.5" fill="#C8E8D8"/>
+                </g>
+                <circle cx="0" cy="14" r="22" fill="#FFC4D1"/>
+                <text x="0" y="22" text-anchor="middle" font-family="Reem Kufi" font-size="26" font-weight="700" fill="#1A3D2F">15</text>
+              </g>
+ 
+              <!-- Appointment card -->
+              <g transform="translate(245, 100)" filter="url(#softShadow2)">
+                <rect x="-55" y="-50" width="110" height="100" rx="12" fill="url(#card2)" stroke="#C8E8D8" stroke-width="2"/>
+                <rect x="-55" y="-50" width="6" height="100" fill="#4FB394"/>
+                <g transform="translate(-30, -28)">
+                  <circle r="9" fill="none" stroke="#4FB394" stroke-width="2.5"/>
+                  <path d="M -6 6 Q -6 16 0 18 Q 6 16 6 6" fill="none" stroke="#4FB394" stroke-width="2.5" stroke-linecap="round"/>
+                  <circle cx="0" cy="22" r="3" fill="#4FB394"/>
+                </g>
+                <rect x="-12" y="-32" width="58" height="6" rx="3" fill="#1A3D2F"/>
+                <rect x="-12" y="-22" width="40" height="4" rx="2" fill="#7A9384" opacity="0.5"/>
+                <line x1="-44" y1="-8" x2="46" y2="-8" stroke="#C8E8D8" stroke-width="1" stroke-dasharray="3 3"/>
+                <g transform="translate(-30, 8)">
+                  <circle r="10" fill="none" stroke="#E8889A" stroke-width="2"/>
+                  <line x1="0" y1="0" x2="0" y2="-6" stroke="#E8889A" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="0" y1="0" x2="5" y2="2" stroke="#E8889A" stroke-width="2" stroke-linecap="round"/>
+                </g>
+                <text x="-12" y="12" font-family="Tajawal" font-size="14" font-weight="700" fill="#1A3D2F">10:30 AM</text>
+                <g transform="translate(-30, 32)">
+                  <circle r="9" fill="#FFC4D1"/>
+                  <circle cy="-2" r="3.5" fill="#FFE5EC"/>
+                  <path d="M -6 4 Q 0 0 6 4 L 6 8 L -6 8 Z" fill="#FFE5EC"/>
+                </g>
+                <rect x="-12" y="28" width="48" height="4" rx="2" fill="#1A3D2F"/>
+                <rect x="-12" y="36" width="32" height="3" rx="1.5" fill="#7A9384" opacity="0.5"/>
+              </g>
+ 
+              <path d="M 165 100 Q 195 80 220 100" stroke="#9EDDC4" stroke-width="2" stroke-dasharray="4 4" fill="none"/>
+            </svg>
+          </div>
+          <div class="story-meta">
+            <span class="story-tag">موعد طبي</span>
+            <span class="story-text">سباق ضد الوقت لموعد لا يُعوّض</span>
+          </div>
+        </article>
+ 
+        <!-- Story 3: Phone with family dashboard -->
+        <article class="story s-watch">
+          <div class="story-illust">
+            <svg viewBox="0 0 360 200" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="phoneBody3" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#1A3D2F"/>
+                  <stop offset="1" stop-color="#2E5A48"/>
+                </linearGradient>
+                <linearGradient id="phoneScreen3" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#F0FAF6"/>
+                  <stop offset="1" stop-color="#FFFFFF"/>
+                </linearGradient>
+                <linearGradient id="hero3" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#87C9A3"/>
+                  <stop offset="1" stop-color="#4FB394"/>
+                </linearGradient>
+                <filter id="softShadow3" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur in="SourceAlpha" stdDeviation="5"/>
+                  <feOffset dx="0" dy="8" result="off"/>
+                  <feComponentTransfer><feFuncA type="linear" slope="0.22"/></feComponentTransfer>
+                  <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+              </defs>
+ 
+              <ellipse cx="180" cy="125" rx="140" ry="55" fill="white" opacity="0.5"/>
+ 
+              <g opacity="0.7">
+                <path d="M 70 50 Q 64 44 64 38 Q 64 32 70 32 Q 73 32 75 36 Q 77 32 80 32 Q 86 32 86 38 Q 86 44 80 50 L 75 54 Z" fill="#FFB1BE"/>
+                <path d="M 290 55 Q 285 50 285 45 Q 285 41 289 41 Q 291 41 293 44 Q 295 41 297 41 Q 301 41 301 45 Q 301 50 296 55 L 293 58 Z" fill="#FFC4D1"/>
+                <path d="M 305 145 Q 300 140 300 135 Q 300 131 304 131 Q 306 131 308 134 Q 310 131 312 131 Q 316 131 316 135 Q 316 140 311 145 L 308 148 Z" fill="#FFB1BE"/>
+              </g>
+ 
+              <!-- Phone -->
+              <g transform="translate(180, 100)" filter="url(#softShadow3)">
+                <rect x="-52" y="-78" width="104" height="160" rx="14" fill="url(#phoneBody3)"/>
+                <rect x="-46" y="-72" width="92" height="148" rx="8" fill="url(#phoneScreen3)"/>
+                <rect x="-12" y="-72" width="24" height="5" rx="2.5" fill="#1A3D2F"/>
+ 
+                <text x="-38" y="-58" font-family="Tajawal" font-size="6" font-weight="700" fill="#1A3D2F">9:41</text>
+                <circle cx="36" cy="-60" r="1.5" fill="#1A3D2F"/>
+                <circle cx="40" cy="-60" r="1.5" fill="#1A3D2F"/>
+ 
+                <rect x="-46" y="-50" width="92" height="36" fill="url(#hero3)"/>
+                <text x="0" y="-36" text-anchor="middle" font-family="Tajawal" font-size="6.5" font-weight="700" fill="white" opacity="0.85">العائلة</text>
+                <text x="0" y="-26" text-anchor="middle" font-family="Tajawal" font-size="9" font-weight="700" fill="white">3 أفراد بأمان</text>
+                <g transform="translate(0, -18)">
+                  <circle r="4" fill="white" opacity="0.95"/>
+                  <path d="M -2 0 L -0.5 1.5 L 2 -1.5" stroke="#2E8B6A" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+ 
+                <g transform="translate(0, -4)">
+                  <rect x="-40" y="-6" width="80" height="14" rx="4" fill="#F0FAF6"/>
+                  <circle cx="-32" cy="1" r="5" fill="#FFC4D1"/>
+                  <circle cx="-32" cy="-0.5" r="2" fill="#FFE5EC"/>
+                  <rect x="-23" y="-2" width="32" height="2.5" rx="1" fill="#1A3D2F"/>
+                  <rect x="-23" y="2" width="22" height="1.8" rx="1" fill="#7A9384" opacity="0.6"/>
+                  <circle cx="32" cy="1" r="3.5" fill="#9EDDC4"/>
+                  <path d="M 30 1 L 31.5 2.5 L 34 0" stroke="#2E8B6A" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+                </g>
+                <g transform="translate(0, 14)">
+                  <rect x="-40" y="-6" width="80" height="14" rx="4" fill="#F0FAF6"/>
+                  <circle cx="-32" cy="1" r="5" fill="#9EDDC4"/>
+                  <circle cx="-32" cy="-0.5" r="2" fill="#FFE5EC"/>
+                  <rect x="-23" y="-2" width="28" height="2.5" rx="1" fill="#1A3D2F"/>
+                  <rect x="-23" y="2" width="20" height="1.8" rx="1" fill="#7A9384" opacity="0.6"/>
+                  <circle cx="32" cy="1" r="3.5" fill="#9EDDC4"/>
+                  <path d="M 30 1 L 31.5 2.5 L 34 0" stroke="#2E8B6A" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+                </g>
+                <g transform="translate(0, 32)">
+                  <rect x="-40" y="-6" width="80" height="14" rx="4" fill="#F0FAF6"/>
+                  <circle cx="-32" cy="1" r="5" fill="#FFB1BE"/>
+                  <circle cx="-32" cy="-0.5" r="2" fill="#FFE5EC"/>
+                  <rect x="-23" y="-2" width="30" height="2.5" rx="1" fill="#1A3D2F"/>
+                  <rect x="-23" y="2" width="18" height="1.8" rx="1" fill="#7A9384" opacity="0.6"/>
+                  <circle cx="32" cy="1" r="3.5" fill="#9EDDC4"/>
+                  <path d="M 30 1 L 31.5 2.5 L 34 0" stroke="#2E8B6A" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+                </g>
+ 
+                <rect x="-40" y="55" width="80" height="14" rx="7" fill="#4FB394"/>
+                <text x="0" y="64.5" text-anchor="middle" font-family="Tajawal" font-size="7" font-weight="700" fill="white">عرض التفاصيل</text>
+ 
+                <rect x="-12" y="76" width="24" height="2" rx="1" fill="#1A3D2F" opacity="0.4"/>
+              </g>
+ 
+              <g transform="translate(95, 70)">
+                <circle r="22" fill="white" opacity="0.85" stroke="#9EDDC4" stroke-width="2" stroke-dasharray="3 3"/>
+                <path d="M 0 6 Q -8 -2 -8 -7 Q -8 -12 -3 -12 Q 0 -12 0 -8 Q 0 -12 3 -12 Q 8 -12 8 -7 Q 8 -2 0 6 Z" fill="#E8889A"/>
+              </g>
+              <g transform="translate(275, 145)">
+                <circle r="20" fill="white" opacity="0.85" stroke="#87C9A3" stroke-width="2" stroke-dasharray="3 3"/>
+                <path d="M -7 0 L -2 5 L 8 -6" stroke="#2E8B6A" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+            </svg>
+          </div>
+          <div class="story-meta">
+            <span class="story-tag">طمأنينة</span>
+            <span class="story-text">قلبك مطمئن… وهم بأمان دائم</span>
+          </div>
+        </article>
+ 
+      </section>
+ 
+      <!-- ===== BOTTOM ROW ===== -->
+      <section class="bottom-row">
+        <div class="services">
+          <div class="service s1">
+            <div class="service-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="8" width="18" height="8" rx="4"/>
+                <line x1="12" y1="8" x2="12" y2="16"/>
+              </svg>
+            </div>
+            <div class="service-text">
+              <span class="service-title">تذكير بالأدوية</span>
+              <span class="service-sub">جدول دقيق وتنبيهات لطيفة</span>
+            </div>
+          </div>
+          <div class="service s2">
+            <div class="service-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/>
+                <polyline points="12 7 12 12 15 14"/>
+              </svg>
+            </div>
+            <div class="service-text">
+              <span class="service-title">تنبيهات المواعيد</span>
+              <span class="service-sub">قبل الموعد بوقت كافٍ</span>
+            </div>
+          </div>
+          <div class="service s3">
+            <div class="service-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="8" y1="13" x2="16" y2="13"/>
+                <line x1="8" y1="17" x2="13" y2="17"/>
+              </svg>
+            </div>
+            <div class="service-text">
+              <span class="service-title">حفظ التقارير</span>
+              <span class="service-sub">منظمة وآمنة في مكان واحد</span>
+            </div>
+          </div>
+          <div class="service s4">
+            <div class="service-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </div>
+            <div class="service-text">
+              <span class="service-title">متابعة العائلة</span>
+              <span class="service-sub">صحتهم بين يديك دائمًا</span>
+            </div>
+          </div>
+        </div>
+ 
+        <div class="stats-panel">
+          <div class="stat">
+            <span class="stat-num">+12K</span>
+            <span class="stat-label">عائلة تثق بنا</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-num">99.8%</span>
+            <span class="stat-label">دقة في التذكير</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-num">4.9 ★</span>
+            <span class="stat-label">تقييم المستخدمين</span>
+          </div>
+        </div>
+      </section>
+ 
+    </div>
+ 
+    <div class="page-indicator">SEHATNA · صحتنا · 01</div>
+ 
+  </div>
+</div>
+ 
+<button class="export-btn" id="exportBtn">
+  📸 وضع التصدير (1600×900)
+</button>
+ 
+<script>
+  const btn = document.getElementById('exportBtn');
+  let exportMode = false;
+  btn.addEventListener('click', () => {
+    exportMode = !exportMode;
+    document.body.classList.toggle('export-mode', exportMode);
+    if (exportMode) {
+      btn.textContent = '↩️ رجوع للعرض العادي';
+      window.scrollTo(0, 0);
+    } else {
+      btn.textContent = '📸 وضع التصدير (1600×900)';
+    }
+  });
+ 
+  if (window.location.search.includes('export')) {
+    btn.click();
+  }
+</script>
+ 
+</body>
+</html>
